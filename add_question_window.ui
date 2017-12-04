@@ -1,0 +1,477 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AddQuestionWindow</class>
+ <widget class="QMainWindow" name="AddQuestionWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Add Course</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="currentIndex">
+       <number>1</number>
+      </property>
+      <widget class="QWidget" name="tab">
+       <attribute name="title">
+        <string>List of Questions</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="0">
+         <widget class="QTreeView" name="questions_tree_view"/>
+        </item>
+        <item row="0" column="1">
+         <layout class="QVBoxLayout" name="verticalLayout_2">
+          <item>
+           <widget class="QPushButton" name="add_new_button">
+            <property name="text">
+             <string>Add new</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="verticalSpacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="edit_question_button">
+            <property name="text">
+             <string>Edit</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="delete_question_button">
+            <property name="text">
+             <string>Delete</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_2">
+       <attribute name="title">
+        <string>Settings</string>
+       </attribute>
+       <widget class="QComboBox" name="repository_combo">
+        <property name="geometry">
+         <rect>
+          <x>150</x>
+          <y>10</y>
+          <width>241</width>
+          <height>31</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>10</y>
+          <width>101</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Repository to use</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="use_time_line_edit">
+        <property name="geometry">
+         <rect>
+          <x>150</x>
+          <y>50</y>
+          <width>241</width>
+          <height>31</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="instructor_name_line_edit">
+        <property name="geometry">
+         <rect>
+          <x>150</x>
+          <y>310</y>
+          <width>241</width>
+          <height>31</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_2">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>320</y>
+          <width>101</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Instructor's name</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_3">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>410</y>
+          <width>131</width>
+          <height>31</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Instructions for candidates</string>
+        </property>
+       </widget>
+       <widget class="QTextEdit" name="instructions_text_edit">
+        <property name="geometry">
+         <rect>
+          <x>150</x>
+          <y>350</y>
+          <width>241</width>
+          <height>151</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QCheckBox" name="expires_on_checkbox">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>90</y>
+          <width>91</width>
+          <height>31</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Expires on</string>
+        </property>
+       </widget>
+       <widget class="QGroupBox" name="randomize_question_group_box">
+        <property name="geometry">
+         <rect>
+          <x>150</x>
+          <y>130</y>
+          <width>241</width>
+          <height>71</height>
+         </rect>
+        </property>
+        <property name="title">
+         <string/>
+        </property>
+        <widget class="QRadioButton" name="randomize_true_radio">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>10</y>
+           <width>82</width>
+           <height>17</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>True</string>
+         </property>
+        </widget>
+        <widget class="QRadioButton" name="randomize_false_radio">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>40</y>
+           <width>82</width>
+           <height>17</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>False</string>
+         </property>
+        </widget>
+       </widget>
+       <widget class="QLabel" name="label_4">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>150</y>
+          <width>111</width>
+          <height>31</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Randomize Question</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_5">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>240</y>
+          <width>121</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Sumbission method</string>
+        </property>
+       </widget>
+       <widget class="QGroupBox" name="submission_method_group_box">
+        <property name="geometry">
+         <rect>
+          <x>150</x>
+          <y>200</y>
+          <width>241</width>
+          <height>101</height>
+         </rect>
+        </property>
+        <property name="title">
+         <string>Sumbission</string>
+        </property>
+        <widget class="QRadioButton" name="submit_method_tradional_radio">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>20</y>
+           <width>181</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Traditional( e.g. Question 1( A ) )</string>
+         </property>
+        </widget>
+        <widget class="QRadioButton" name="submit_method_modern_radio">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>50</y>
+           <width>211</width>
+           <height>21</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Modern( e.g. Question 1( Answer is... ))</string>
+         </property>
+        </widget>
+        <widget class="QRadioButton" name="submit_method_hybrid_radio">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>80</y>
+           <width>201</width>
+           <height>17</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Hybrid( Question 1( A, Answer is... ))</string>
+         </property>
+        </widget>
+       </widget>
+       <widget class="QPushButton" name="submit_button">
+        <property name="geometry">
+         <rect>
+          <x>430</x>
+          <y>470</y>
+          <width>191</width>
+          <height>31</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Submit</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_6">
+        <property name="geometry">
+         <rect>
+          <x>470</x>
+          <y>10</y>
+          <width>81</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Course Name</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="course_name_line_edit">
+        <property name="geometry">
+         <rect>
+          <x>420</x>
+          <y>30</y>
+          <width>201</width>
+          <height>31</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_7">
+        <property name="geometry">
+         <rect>
+          <x>480</x>
+          <y>70</y>
+          <width>81</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Course Code</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="course_code_line_edit">
+        <property name="geometry">
+         <rect>
+          <x>420</x>
+          <y>90</y>
+          <width>201</width>
+          <height>31</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_8">
+        <property name="geometry">
+         <rect>
+          <x>450</x>
+          <y>130</y>
+          <width>141</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Departments( on each line )</string>
+        </property>
+       </widget>
+       <widget class="QTextEdit" name="departments_text_edit">
+        <property name="geometry">
+         <rect>
+          <x>420</x>
+          <y>160</y>
+          <width>201</width>
+          <height>71</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_9">
+        <property name="geometry">
+         <rect>
+          <x>470</x>
+          <y>240</y>
+          <width>81</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Date to be held</string>
+        </property>
+       </widget>
+       <widget class="QDateEdit" name="expires_on_dt_edit">
+        <property name="geometry">
+         <rect>
+          <x>150</x>
+          <y>90</y>
+          <width>241</width>
+          <height>31</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QDateEdit" name="held_date_dt_edit">
+        <property name="geometry">
+         <rect>
+          <x>420</x>
+          <y>270</y>
+          <width>201</width>
+          <height>31</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_10">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>60</y>
+          <width>121</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Time to use( in minutes )</string>
+        </property>
+       </widget>
+       <widget class="QCheckBox" name="local_copy_chkbox">
+        <property name="geometry">
+         <rect>
+          <x>420</x>
+          <y>310</y>
+          <width>171</width>
+          <height>31</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Save my personal copy locally</string>
+        </property>
+       </widget>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuMenu">
+    <property name="title">
+     <string>Menu</string>
+    </property>
+    <addaction name="add_new_question_action"/>
+    <addaction name="separator"/>
+    <addaction name="add_from_file_action"/>
+   </widget>
+   <addaction name="menuMenu"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="add_new_question_action">
+   <property name="text">
+    <string>Add new</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="preview_window_action">
+   <property name="text">
+    <string>Preview Window</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
+   </property>
+  </action>
+  <action name="add_from_file_action">
+   <property name="text">
+    <string>Add from file</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+D</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

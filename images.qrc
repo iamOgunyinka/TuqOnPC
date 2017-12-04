@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/image">
+        <file>images/logo.png</file>
+        <file>images/tuq_feature-graphic.png</file>
+    </qresource>
+</RCC>
