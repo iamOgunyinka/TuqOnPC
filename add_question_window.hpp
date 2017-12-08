@@ -71,6 +71,7 @@ private:
     void FillDataToUpload();
     MetaData GetUploadMetaData( unsigned int const i, QJsonObject const & );
     QJsonObject ReadFile();
+    QJsonObject GetQuestionJson();
 };
 
 class UploadTask: public QObject

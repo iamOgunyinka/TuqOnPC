@@ -25,7 +25,7 @@ private:
     void DeleteCourse( QString const & course_name, QString const & repository_name );
     void DeleteRepository( QString const & repository_name );
     void ListCoursePartakers( long const course_id, QString const & repository_name );
-    void EditCourse( QString const & course_name, QString const & repository_name );
+    void EditCourse( long const &course_id, QString const & repository_name );
 private:
     Ui::ListCoursesDialog *ui;
     utilities::ListMap      &repository_courses;

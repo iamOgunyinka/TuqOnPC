@@ -314,6 +314,8 @@ void AddQuestionWindow::UpdateModel( QJsonObject const & object, int const index
         url_item->setText( "Filename: " + object.value( "raw" ).toString() );
     } else if( object.contains( "photo" ) ){
         url_item->setText( "Filename: " + object.value( "photo" ).toString() );
+    } else if( object.contains( "url" ) ){
+        url_item->setText( "URL: " + object.value( "url" ).toString() );
     }
     url_item->setEditable( false );
 
@@ -343,7 +345,6 @@ QJsonObject AddQuestionWindow::ReadFile()
 void AddQuestionWindow::OnAddFromFileActionTriggered()
 {
     QJsonObject const data{ ReadFile() };
-    qDebug() << data;
     if( data.isEmpty() ) return;
     AddFromObject( data );
 }
@@ -407,6 +408,7 @@ void AddQuestionWindow::AddFromObject( QJsonObject const & object )
             MBOX_CRIT( "The question file contain some invalid data" );
             return;
         }
+
         question_items.append( item );
         answer_items.append( answer_list.at( index ).toInt() );
         UpdateModel( item, question_items.size() );
@@ -466,8 +468,22 @@ void AddQuestionWindow::OnSubmitButtonClicked()
         question_root["items"] = question_items;
     });
 
-    FillDataToUpload();
+    if( ui->local_copy_chkbox->isChecked() ){
 
+        QString const filename = QFileDialog::getSaveFileName( this, this->windowTitle(), "",
+                                                               "JSON Files( *.json )"  );
+        if( !filename.isEmpty() ){
+            QFile file( filename );
+            if( !file.open( QIODevice::WriteOnly ) ){
+                MBOX_CRIT( file.errorString() );
+            } else {
+                QJsonObject const file_data{ { "detail", GetQuestionJson() } };
+                QTextStream file_stream( &file );
+                file_stream << QJsonDocument( file_data ).toJson();
+            }
+        }
+    }
+    FillDataToUpload();
     if( upload_metadata.size() == 0 ){ // no files to upload?
         CompleteSubmission();
     } else {
@@ -557,7 +573,7 @@ MetaData AddQuestionWindow::GetUploadMetaData( unsigned int const index, QJsonOb
     return MetaData { item.value( "photo" ).toString(), UploadType::Image, index };
 }
 
-void AddQuestionWindow::CompleteSubmission()
+QJsonObject AddQuestionWindow::GetQuestionJson()
 {
     QJsonObject question {};
     question["name"] = ui->course_name_line_edit->text();
@@ -579,13 +595,18 @@ void AddQuestionWindow::CompleteSubmission()
     if( ui->expires_on_checkbox->isChecked() ){
         question["expires_on"] = GetDate( ui->expires_on_dt_edit->date() );
     }
+    return question;
+}
 
+void AddQuestionWindow::CompleteSubmission()
+{
     QDialog *sending_dialog = new QDialog( this );
     QVBoxLayout *layout = new QVBoxLayout;
     QLineEdit *message_box = new QLineEdit( "Please wait while we send your question over" );
     layout->addWidget( message_box );
     sending_dialog->setLayout( layout );
 
+    auto const question = GetQuestionJson();
     QByteArray data = QJsonDocument( question ).toJson();
     auto request = utilities::GetPostNetworkRequestFrom( send_to_address, data.size() );
     request.setHeader( QNetworkRequest::ContentTypeHeader, "application/json" );
@@ -593,20 +614,6 @@ void AddQuestionWindow::CompleteSubmission()
     QNetworkReply *network_reply = network_manager->post( request, data );
 
     QObject::connect( network_reply, &QNetworkReply::finished, [=]{
-        if( ui->local_copy_chkbox->isChecked() ){
-            QString const filename = QFileDialog::getSaveFileName( this, this->windowTitle(), "",
-                                                                   "JSON Files( *.json )"  );
-            if( !filename.isEmpty() ){
-                QFile file( filename );
-                if( !file.open( QIODevice::WriteOnly ) ){
-                    MBOX_CRIT( file.errorString() );
-                } else {
-                    QJsonObject const file_data{ { "detail", question } };
-                    QTextStream file_stream( &file );
-                    file_stream << QJsonDocument( file_data ).toJson();
-                }
-            }
-        }
         QJsonObject result = utilities::OnNetworkResponseReceived( network_reply );
         if( result.isEmpty() ){
             return;
@@ -680,8 +687,9 @@ void UploadTask::loop()
     QString boundary{ "data_boundary" };
     while( !upload_metadata.isEmpty() ){
         MetaData front_item { upload_metadata.dequeue() };
-        QNetworkRequest request( front_item.type == UploadType::Rawfile ? rawfile_upload_address :
-                                                                          image_upload_address );
+        QUrl const address = front_item.type == UploadType::Rawfile ? rawfile_upload_address :
+                                                                      image_upload_address;
+        QNetworkRequest request = utilities::GetRequest( address.toString() );
         QByteArray data = FileToData( front_item.filename, front_item.type );
         if( data.isNull() ){
             emit errorOccured( front_item.data_index, tr( "Unable to read file" ) );

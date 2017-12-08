@@ -72,9 +72,12 @@ void MainWindow::SignUserIn()
 void MainWindow::InitializeActions()
 {
     create_course_action = new QAction( "Create new course" );
+    create_course_action->setShortcut( tr("Ctrl+N") );
     QObject::connect( create_course_action, &QAction::triggered, this,
                       &MainWindow::onCreateCourseActionTriggered );
+
     update_course_action = new QAction( "Update course" );
+    update_course_action->setShortcut( tr("Ctrl+E") );
     QObject::connect( update_course_action, &QAction::triggered, this,
                       &MainWindow::onUpdateCourseActionTriggered );
 
@@ -83,13 +86,16 @@ void MainWindow::InitializeActions()
                       &MainWindow::onEditRepositoryActionTriggered );
 
     login_action = new QAction( "Login" );
+    login_action->setShortcut( tr( "Ctrl+L" ) );
     QObject::connect( login_action, &QAction::triggered, this, &MainWindow::SignUserIn );
 
     add_repository_action = new QAction( "Create repository" );
+    add_repository_action->setShortcut( tr( "Ctrl+R" ) );
     QObject::connect( add_repository_action,&QAction::triggered, this,
                       &MainWindow::onAddRepositoryTriggered );
 
     list_repositories_action = new QAction( "List my courses" );
+    list_repositories_action->setShortcut( tr( "Ctrl+A" ) );
     QObject::connect( list_repositories_action, &QAction::triggered, this,
                       &MainWindow::onListRepoTriggered );
 }

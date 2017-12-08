@@ -2,10 +2,12 @@
 #include "ui_question_dialog.h"
 
 #include <QInputDialog>
+#include <QCloseEvent>
 #include <QFileDialog>
 #include <QJsonArray>
 #include <QListWidgetItem>
 #include <QMessageBox>
+#include <QMenu>
 
 QuestionDialog::QuestionDialog( QWidget *parent ) :
     QDialog{ parent },
@@ -47,15 +49,48 @@ QuestionDialog::QuestionDialog( QWidget *parent ) :
     });
     QObject::connect( ui->add_button, &QPushButton::clicked, this,
                       &QuestionDialog::OnAddQuestionClicked );
+    ui->options_list_widget->setContextMenuPolicy( Qt::CustomContextMenu );
     ui->options_list_widget->setSelectionMode( QAbstractItemView::SingleSelection );
     ui->options_list_widget->setSelectionBehavior( QAbstractItemView::SelectRows );
     ui->options_list_widget->setDragDropMode( QAbstractItemView::InternalMove );
     ui->options_list_widget->setEditTriggers( QAbstractItemView::DoubleClicked );
+    QObject::connect( ui->options_list_widget, &QListWidget::customContextMenuRequested,
+                      this, &QuestionDialog::OnCustomContextMenuRequested );
 }
 
 QuestionDialog::~QuestionDialog()
 {
     delete ui;
+}
+
+void QuestionDialog::closeEvent( QCloseEvent *event )
+{
+    auto leaving = QMessageBox::information( this, windowTitle(), "Exit?", QMessageBox::Yes | QMessageBox::No );
+    if( leaving == QMessageBox::Yes ){
+        event->accept();
+    } else {
+        event->ignore();
+    }
+}
+
+void QuestionDialog::OnCustomContextMenuRequested( QPoint const &point )
+{
+    QListWidgetItem* item = ui->options_list_widget->itemAt( point );
+    if( item == nullptr ) return;
+    QMenu custom_menu {};
+    QAction *edit_item_action = new QAction( "Edit" );
+    QAction *delete_item_action = new QAction( "Delete" );
+
+    QObject::connect( edit_item_action, &QAction::triggered, [=]{
+        this->OnOptionsItemDoubleClicked( ui->options_list_widget->currentItem() );
+    });
+    QObject::connect( delete_item_action, &QAction::triggered, [=]{
+        this->OnDeleteOptionsItem( ui->options_list_widget->currentItem() );
+    });
+
+    custom_menu.addAction( edit_item_action );
+    custom_menu.addAction( delete_item_action );
+    custom_menu.exec( ui->options_list_widget->mapToGlobal( point ) );
 }
 
 void QuestionDialog::OnAddQuestionClicked()
@@ -134,6 +169,14 @@ void QuestionDialog::OnAddOptionToListClicked()
     ui->answer_combo->addItem( new_option );
     ui->options_line_edit->clear();
     ui->options_line_edit->setFocus();
+}
+
+void QuestionDialog::OnDeleteOptionsItem( QListWidgetItem *item )
+{
+    if( item ){
+        ui->answer_combo->removeItem( ui->answer_combo->findText( item->text() ));
+        delete item;
+    }
 }
 
 void QuestionDialog::OnOptionsItemDoubleClicked( QListWidgetItem *item )

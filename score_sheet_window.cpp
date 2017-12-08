@@ -6,6 +6,7 @@
 #include <QNetworkReply>
 #include <QUrlQuery>
 #include <QUrl>
+#include <QFileDialog>
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QStandardItemModel>
@@ -13,12 +14,14 @@
 
 #include "resources.hpp"
 
-ScoreSheetWindow::ScoreSheetWindow(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::ScoreSheetWindow)
+ScoreSheetWindow::ScoreSheetWindow( QWidget *parent ) :
+    QMainWindow( parent ),
+    ui( new Ui::ScoreSheetWindow )
 {
     ui->setupUi( this );
     setWindowTitle( "Score listing" );
+    QObject::connect( ui->print_to_csv_action, &QAction::triggered, this, &ScoreSheetWindow::OnCSVPrintTriggered );
+    QObject::connect( ui->print_to_pdf_action, &QAction::triggered, this, &ScoreSheetWindow::OnPDFPrintTriggered );
 }
 
 void ScoreSheetWindow::SetNetworkManager( QNetworkAccessManager *const network )
@@ -59,7 +62,6 @@ void ScoreSheetWindow::StartFetchingData()
             this->close();
             return;
         }
-        qDebug() << response;
         DisplayData( response.value( "detail" ).toArray() );
     });
     QMessageBox::information( this, windowTitle(), "Please wait a few seconds" );
@@ -78,12 +80,17 @@ void ScoreSheetWindow::DisplayData( QJsonArray const &data )
     for( int index = 0; index != rows; ++index )
     {
         data_item = data.at( index ).toObject();
-        auto full_name_item = new QStandardItem( data_item.value( "fullname" ).toString() );
-        auto username_item = new QStandardItem( data_item.value( "username" ).toString() );
-        auto score_item = new QStandardItem( QString::number( data_item.value( "score" ).toInt()) );
-        auto date_time_item = new QStandardItem( data_item.value( "date_time" ).toString() );
-        auto total_score_item = new QStandardItem( QString::number(
-                                                       data_item.value( "total" ).toInt() ));
+        TableData const table_data = {
+            data_item.value( "fullname" ).toString(), data_item.value( "username" ).toString(),
+            data_item.value( "date_time" ).toString(), data_item.value( "score" ).toInt(),
+            data_item.value( "total" ).toInt()
+        };
+        auto full_name_item = new QStandardItem( table_data.fullname );
+        auto username_item = new QStandardItem( table_data.username );
+        auto score_item = new QStandardItem( QString::number( table_data.score ) );
+        auto date_time_item = new QStandardItem( table_data.date_time );
+        auto total_score_item = new QStandardItem( QString::number( table_data.total_score ));
+
         full_name_item->setEditable( false );
         username_item->setEditable( false );
         score_item->setEditable( false );
@@ -93,6 +100,7 @@ void ScoreSheetWindow::DisplayData( QJsonArray const &data )
         model->appendRow( { full_name_item, username_item, score_item,
                             total_score_item, date_time_item } );
         score_reference_ids.append( data_item.value( "reference_id" ).toString() );
+        table_data_list.append( table_data );
     }
 
     model->setHorizontalHeaderLabels( { "Full name", "Username", "Score", "Total", "Date and Time" });
@@ -133,5 +141,34 @@ void ScoreSheetWindow::DeleteScoreWithReference( int const row )
         if( result.isEmpty() ) return;
         ui->tableView->model()->removeRow( row );
         this->score_reference_ids.removeAt( row );
+        this->table_data_list.removeAt( row );
     });
+}
+
+void ScoreSheetWindow::OnCSVPrintTriggered()
+{
+    QString const filename = QFileDialog::getSaveFileName( this, "Save CSV", "", "CSV Files(*.csv)" );
+    if( filename.isNull() ) return;
+    QFile file( filename );
+    if( !file.open( QIODevice::WriteOnly ) ){
+        QMessageBox::critical( this, "Error", file.errorString() );
+        return;
+    }
+
+    QTextStream text_stream{ &file };
+    text_stream << "Fullname,\tUsername,\tScore,\tTotal,\tDate and time\n";
+    for( int i = 0; i != table_data_list.size(); ++ i ){
+        TableData const &item = table_data_list[i];
+        QString date_time = item.date_time;
+        date_time.replace( ",", "." );
+        text_stream << item.fullname << ",\t" << item.username << ",\t" << item.score << ",\t"
+                    << item.total_score << ",\t" << date_time << "\n";
+    }
+    QMessageBox::information( this, windowTitle(), QString("%1 saved successfully." ).arg( filename ));
+}
+
+//todo
+void ScoreSheetWindow::OnPDFPrintTriggered()
+{
+    QMessageBox::information( this, windowTitle(), "Todo next" );
 }

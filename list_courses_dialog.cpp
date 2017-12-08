@@ -150,7 +150,7 @@ void ListCoursesDialog::OnListRepositoryCustomMenuTriggered( QPoint const &point
             QString const repository_name = ui->repo_treeview->model()->
                     data( parent_model ).toString();
             long const course_id = repository_courses.value( repository_name )
-                    .at( parent_model.row() ).second;
+                    .at( model_index.row() ).second;
             this->ListCoursePartakers( course_id, repository_name );
         });
 
@@ -163,9 +163,13 @@ void ListCoursesDialog::OnListRepositoryCustomMenuTriggered( QPoint const &point
         } );
 
         QObject::connect( edit_course_action, &QAction::triggered, [=]{
-            utilities::StringPair course_repository_pair = course_prelim_action( "Edit course" );
-            if( course_repository_pair.first.isEmpty() ) return;
-            this->EditCourse( course_repository_pair.first, course_repository_pair.second );
+            QModelIndex parent_model = ui->repo_treeview->model()->
+                    index( model_index.parent().row(), 0 );
+            QString const repository_name = ui->repo_treeview->model()->
+                    data( parent_model ).toString();
+            long const course_id = repository_courses.value( repository_name )
+                    .at( model_index.row() ).second;
+            this->EditCourse( course_id, repository_name );
         });
         menu.addAction( list_partaker_action );
         menu.addAction( edit_course_action );
@@ -223,7 +227,7 @@ void ListCoursesDialog::ListCoursePartakers( long const course_id, QString const
     score_window->show();
 }
 
-void ListCoursesDialog::EditCourse( QString const &course_name, QString const &repository_name )
+void ListCoursesDialog::EditCourse(long const &course_id, QString const &repository_name )
 {
     AddQuestionWindow *question_window = new AddQuestionWindow( repository_courses, this );
     question_window->SetNetwork( network_manager );
@@ -238,7 +242,7 @@ void ListCoursesDialog::EditCourse( QString const &course_name, QString const &r
     auto url = QUrl::fromUserInput( endpoint.edit_course );
     QUrlQuery extra_query{};
     extra_query.addQueryItem( "repository_name", repository_name );
-    extra_query.addQueryItem( "course_name", course_name );
+    extra_query.addQueryItem( "course_id", QString::number( course_id ) );
     url.setQuery( extra_query );
     auto request = utilities::GetRequest( url.toString() );
     network_manager->cookieJar()

@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "TuqOnThePC"
-#define MyAppVersion "1.0"
+#define MyAppVersion "1.0.3"
 #define MyAppPublisher "Froist Inc."
 #define MyAppURL "https://sproot.xyz/tuq_on_pc"
 #define MyAppExeName "TuqOnThePC.exe"

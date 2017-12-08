@@ -25,6 +25,8 @@ public:
     explicit QuestionDialog( QWidget *parent = nullptr );
     ~QuestionDialog();
 
+    void closeEvent( QCloseEvent * );
+
     QJsonObject GetQuestionObject() const;
     int  GetSolutionOption() const;
     void SetQuestionText( QString const & question_text );
@@ -40,7 +42,10 @@ private:
     Ui::QuestionDialog *ui;
 
     void OnAddOptionToListClicked();
+    void OnCustomContextMenuRequested( QPoint const & );
     void OnOptionsItemDoubleClicked( QListWidgetItem *item );
+    void OnEditOptionsItem( QListWidgetItem *item );
+    void OnDeleteOptionsItem( QListWidgetItem *item );
     void OnAddQuestionClicked();
 };
 
