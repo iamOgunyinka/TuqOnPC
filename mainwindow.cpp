@@ -142,7 +142,7 @@ void MainWindow::onAddRepositoryTriggered()
     auto request = utilities::GetPostNetworkRequestFrom( endpoint.add_new_repository, data.size() );
     network_manager->cookieJar()->setCookiesFromUrl( login_cookies,
                                                      QUrl::fromUserInput( endpoint.add_new_repository));
-    QDialog *wait_dialog = new QDialog(this);
+    QDialog *wait_dialog = new QDialog( this );
     wait_dialog->setWindowModality( Qt::ApplicationModal );
     QVBoxLayout *layout = new QVBoxLayout;
     auto label = new QLabel( "Please wait while we send your request to the server" );
@@ -156,7 +156,14 @@ void MainWindow::onAddRepositoryTriggered()
             wait_dialog->accept();
             return;
         }
-        label->setText( response.value( "detail" ).toString() );
+        bool const is_error = response.value( "status" ).toInt() == 0;
+        QString const detail = response.value( "detail" ).toString();
+        if( is_error ){
+            QMessageBox::critical( wait_dialog, "Error", detail );
+        } else {
+            QMessageBox::information( wait_dialog, "Success", "Repository added successfully" );
+        }
+        wait_dialog->accept();
     });
     wait_dialog->exec();
 }

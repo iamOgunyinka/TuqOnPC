@@ -1,13 +1,14 @@
 #include "list_courses_dialog.hpp"
 #include "ui_list_courses_dialog.h"
-#include <QMessageBox>
-#include <QStandardItemModel>
-#include <QStandardItem>
 #include <QAction>
+#include <QInputDialog>
 #include <QMenu>
+#include <QMessageBox>
+#include <QNetworkCookieJar>
+#include <QStandardItem>
+#include <QStandardItemModel>
 #include <QUrl>
 #include <QUrlQuery>
-#include <QNetworkCookieJar>
 
 #include "add_question_window.hpp"
 #include "score_sheet_window.hpp"
@@ -112,64 +113,58 @@ void ListCoursesDialog::OnListRepositoryCustomMenuTriggered( QPoint const &point
 
     if( !model_index.parent().isValid() ){ // this is a repository
         QAction * const delete_repository_action = new QAction( "Delete repository" );
+        QAction *const add_repository = new QAction( "Add repository" );
         QObject::connect( delete_repository_action, &QAction::triggered, [=]{
             auto response = QMessageBox::information( this, "Delete repository",
                                    "Deleting this repository means you lose every course "
                                    "existing under it, are you sure you want to continue?",
                                    QMessageBox::Yes | QMessageBox::No );
             if( response == QMessageBox::Yes ){
-                QModelIndex model = ui->repo_treeview->model()->index( model_index.row(), 0 );
-                QString repository_name = ui->repo_treeview->model()->data( model ).toString();
+                QModelIndex const model = ui->repo_treeview->model()->index( model_index.row(), 0 );
+                QString const repository_name = ui->repo_treeview->model()->data( model ).toString();
                 this->DeleteRepository( repository_name );
                 ui->repo_treeview->model()->removeRow( model_index.row() );
             }
         });
+        QObject::connect( add_repository, &QAction::triggered, this,
+                          &ListCoursesDialog::OnAddRepositoryTriggered );
+        menu.addAction( add_repository );
         menu.addAction( delete_repository_action );
     } else {
         QAction *delete_course_action = new QAction( "Delete course" );
         QAction *edit_course_action = new QAction( "Edit course" );
         QAction *list_partaker_action = new QAction( "List partakers" );
 
-        auto course_prelim_action = [=]( QString const & msgbox_title )-> utilities::StringPair {
-            auto response = QMessageBox::information( this, msgbox_title,
-                                      "Are you sure?", QMessageBox::Yes | QMessageBox::No );
-            if( response == QMessageBox::Yes ){
-                QModelIndex parent_model = ui->repo_treeview->model()->
-                        index( model_index.parent().row(), 0 );
-                QString const course_name = ui->repo_treeview->model()->
-                        data( model_index ).toString();
-                QString const repository_name = ui->repo_treeview->model()->
-                        data( parent_model ).toString();
-                return { course_name, repository_name };
-            }
-            return {};
+        auto course_prelim_action = [=]()-> QPair<long, QString> {
+            QModelIndex parent_model = ui->repo_treeview->model()->index( model_index.parent().row(), 0 );
+            QString const repository_name = ui->repo_treeview->model()->data( parent_model ).toString();
+            long const course_id = repository_courses.value( repository_name ).at( model_index.row() ).second;
+            return { course_id, repository_name };
         };
         QObject::connect( list_partaker_action, &QAction::triggered, [=]{
-            QModelIndex parent_model = ui->repo_treeview->model()->
-                    index( model_index.parent().row(), 0 );
-            QString const repository_name = ui->repo_treeview->model()->
-                    data( parent_model ).toString();
-            long const course_id = repository_courses.value( repository_name )
-                    .at( model_index.row() ).second;
-            this->ListCoursePartakers( course_id, repository_name );
+            auto const course_information = course_prelim_action();
+            this->ListCoursePartakers( course_information.first, course_information.second );
         });
 
         QObject::connect( delete_course_action, &QAction::triggered, [=]{
-            utilities::StringPair course_repo_pair = course_prelim_action( "Delete course" );
-            if( course_repo_pair.first.isEmpty() ) return;
-            this->DeleteCourse( course_repo_pair.first, course_repo_pair.second );
-            ui->repo_treeview->model()->removeRow( model_index.row(),
-                                                   model_index.parent() );
-        } );
+            auto response = QMessageBox::information( this, "Delete course",
+                                                      "Are you sure you want to delete course?",
+                                                      QMessageBox::Yes | QMessageBox::No );
+            if( response == QMessageBox::Yes ){
+                auto const course_repo_pair = course_prelim_action();
+                this->DeleteCourse( course_repo_pair.first, course_repo_pair.second );
+                ui->repo_treeview->model()->removeRow( model_index.row(), model_index.parent() );
+            }
+        });
 
         QObject::connect( edit_course_action, &QAction::triggered, [=]{
-            QModelIndex parent_model = ui->repo_treeview->model()->
-                    index( model_index.parent().row(), 0 );
-            QString const repository_name = ui->repo_treeview->model()->
-                    data( parent_model ).toString();
-            long const course_id = repository_courses.value( repository_name )
-                    .at( model_index.row() ).second;
-            this->EditCourse( course_id, repository_name );
+            auto response = QMessageBox::information( this, "Edit",
+                                                      "Are you sure you want to edit this course?",
+                                                      QMessageBox::Yes | QMessageBox::No );
+            if( response == QMessageBox::Yes ){
+                auto const course_repo_pair = course_prelim_action();
+                this->EditCourse( course_repo_pair.first, course_repo_pair.second );
+            }
         });
         menu.addAction( list_partaker_action );
         menu.addAction( edit_course_action );
@@ -178,9 +173,39 @@ void ListCoursesDialog::OnListRepositoryCustomMenuTriggered( QPoint const &point
     menu.exec( ui->repo_treeview->mapToGlobal( point ) );
 }
 
-void ListCoursesDialog::DeleteCourse( QString const &course_name, QString const &repository_name )
+void ListCoursesDialog::OnAddRepositoryTriggered()
 {
-    QJsonObject const json_object{ { "course_name", course_name },
+    QString repository_name = QInputDialog::getText( this, "Repository", "Enter a repository name" );
+    if( repository_name.isNull() ) return;
+
+    ui->repo_treeview->setEnabled( false );
+    QByteArray data = QJsonDocument( QJsonObject{ { "repository_name", repository_name } }).toJson();
+    auto request = utilities::GetPostNetworkRequestFrom( endpoint.add_new_repository, data.size() );
+    network_manager->cookieJar()->setCookiesFromUrl( cookies,
+                                                     QUrl::fromUserInput( endpoint.add_new_repository));
+    QNetworkReply *reply = network_manager->post( request, data );
+    QObject::connect( reply, &QNetworkReply::finished, [=]{
+        auto response = utilities::OnNetworkResponseReceived( reply );
+        if( !response.isEmpty() ){
+            bool const is_error = response.value( "status" ).toInt() == 0;
+            QString const detail = response.value( "detail" ).toString();
+            if( is_error ){
+                QMessageBox::critical( this, "Error", detail );
+            } else {
+                QStandardItem * const new_repository = new QStandardItem( repository_name );
+                QStandardItem * const repo_url = new QStandardItem( detail );
+                new_repository->setEditable( false );
+                QStandardItemModel * model = qobject_cast<QStandardItemModel*>( ui->repo_treeview->model() );
+                model->appendRow( { new_repository, repo_url } );
+            }
+        }
+        ui->repo_treeview->setEnabled( true );
+    });
+}
+
+void ListCoursesDialog::DeleteCourse( long const &course_id, QString const &repository_name )
+{
+    QJsonObject const json_object{ { "course_id", QString::number( course_id ) },
                                    { "repository_name", repository_name } };
     QByteArray delete_data = QJsonDocument{ json_object }.toJson();
     auto const network_request = utilities::GetPostNetworkRequestFrom( endpoint.delete_course,

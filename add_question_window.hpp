@@ -54,6 +54,7 @@ private:
     QString        send_to_address;
     QString        image_upload_address;
     QString        raw_file_upload_address;
+    QString        icon_filename; // if any.
     ListMap        &repositories;
     UploadDataList upload_metadata;
     UploadDataList failed_uploads;
@@ -69,6 +70,7 @@ private:
     void CompleteSubmission();
     void PerformUpload();
     void FillDataToUpload();
+    void OnUseCustomIconButtonTriggered();
     MetaData GetUploadMetaData( unsigned int const i, QJsonObject const & );
     QJsonObject ReadFile();
     QJsonObject GetQuestionJson();

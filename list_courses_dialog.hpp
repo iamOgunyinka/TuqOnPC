@@ -22,10 +22,11 @@ public:
     void Start();
 private:
     void OnListRepositoryCustomMenuTriggered( QPoint const &point );
-    void DeleteCourse( QString const & course_name, QString const & repository_name );
+    void DeleteCourse( long const &course_id, QString const & repository_name );
     void DeleteRepository( QString const & repository_name );
     void ListCoursePartakers( long const course_id, QString const & repository_name );
     void EditCourse( long const &course_id, QString const & repository_name );
+    void OnAddRepositoryTriggered();
 private:
     Ui::ListCoursesDialog *ui;
     utilities::ListMap      &repository_courses;

@@ -284,9 +284,9 @@
        <widget class="QPushButton" name="submit_button">
         <property name="geometry">
          <rect>
-          <x>430</x>
+          <x>420</x>
           <y>470</y>
-          <width>191</width>
+          <width>201</width>
           <height>31</height>
          </rect>
         </property>
@@ -421,6 +421,39 @@
         <property name="text">
          <string>Save my personal copy locally</string>
         </property>
+       </widget>
+       <widget class="QWidget" name="">
+        <property name="geometry">
+         <rect>
+          <x>420</x>
+          <y>350</y>
+          <width>201</width>
+          <height>111</height>
+         </rect>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <item>
+          <widget class="QCheckBox" name="using_icon_check">
+           <property name="text">
+            <string>Use customized icon</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="icon_preview_text">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="choose_icon_button">
+           <property name="text">
+            <string>Browse icon</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </widget>
      </widget>

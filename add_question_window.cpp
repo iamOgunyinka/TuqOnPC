@@ -59,6 +59,19 @@ AddQuestionWindow::AddQuestionWindow( ListMap &repositories, QWidget *parent ) :
 
     ui->questions_tree_view->setDragDropMode( QAbstractItemView::NoDragDrop );
     ui->questions_tree_view->setContextMenuPolicy( Qt::CustomContextMenu );
+
+    ui->local_copy_chkbox->setChecked( true );
+    ui->using_icon_check->setChecked( false );
+    ui->choose_icon_button->setVisible( false );
+    ui->icon_preview_text->setVisible( false );
+    QObject::connect( ui->choose_icon_button, &QPushButton::clicked, this,
+                      &AddQuestionWindow::OnUseCustomIconButtonTriggered );
+
+    QObject::connect( ui->using_icon_check, &QCheckBox::toggled, [=]( bool checked ){
+        ui->choose_icon_button->setVisible( checked );
+        ui->icon_preview_text->setVisible( checked );
+    });
+
     QObject::connect( ui->questions_tree_view, &QTreeView::customContextMenuRequested,
                       this, &AddQuestionWindow::OnCustomMenuRequested );
     ui->expires_on_dt_edit->setEnabled( false );
@@ -94,6 +107,17 @@ AddQuestionWindow::AddQuestionWindow( ListMap &repositories, QWidget *parent ) :
 AddQuestionWindow::~AddQuestionWindow()
 {
     delete ui;
+}
+
+void AddQuestionWindow::OnUseCustomIconButtonTriggered()
+{
+    icon_filename = QFileDialog::getOpenFileName( this, "Choose custom icon", "", "PNG Files(*.png)" );
+    QPixmap icon_preview{ icon_filename };
+    if( icon_filename.isNull() || icon_preview.isNull() ){
+        ui->using_icon_check->setChecked( false );
+        return;
+    }
+    ui->icon_preview_text->setPixmap( icon_preview.scaled( 100, 100 ) );
 }
 
 void AddQuestionWindow::OnCustomMenuRequested( const QPoint &point )
@@ -360,6 +384,14 @@ void AddQuestionWindow::AddFromObject( QJsonObject const & object )
         ui->course_code_line_edit->setText( root_element.value( "course_code" ).toString() );
         ui->course_code_line_edit->setEnabled( false );
     }
+    QString const icon_location = root_element.value( "icon" ).toString();
+    if( icon_location != "default" ){
+        ui->using_icon_check->setChecked( true );
+        ui->using_icon_check->setEnabled( false );
+        ui->choose_icon_button->setVisible( false );
+        ui->icon_preview_text->setText( "Custom image used." );
+        icon_filename = icon_location;
+    }
     ui->course_name_line_edit->setText( root_element.value( "name" ).toString() );
     ui->instructor_name_line_edit->setText( root_element.value( "administrator_name" ).toString() );
     QJsonObject const question_object = root_element.value( "question" ).toObject();
@@ -420,19 +452,23 @@ void AddQuestionWindow::AddFromObject( QJsonObject const & object )
 void AddQuestionWindow::OnSubmitButtonClicked()
 {
     ui->tabWidget->setCurrentIndex( 1 );
+    ui->tabWidget->setEnabled( false );
     if( ui->course_code_line_edit->text().trimmed().isEmpty() ){
         MBOX_CRIT( "Course code has not been set" );
         ui->course_code_line_edit->setFocus();
+        ui->tabWidget->setEnabled( true );
         return;
     }
     if( ui->course_name_line_edit->text().trimmed().isEmpty() ){
         MBOX_CRIT( "Course name has not been set" );
         ui->course_name_line_edit->setFocus();
+        ui->tabWidget->setEnabled( true );
         return;
     }
     if( ui->use_time_line_edit->text().trimmed().isEmpty() ){
         MBOX_CRIT( "You cannot leave this column empty\n" );
         ui->use_time_line_edit->setFocus();
+        ui->tabWidget->setEnabled( true );
         return;
     }
     bool is_ok = false;
@@ -441,17 +477,20 @@ void AddQuestionWindow::OnSubmitButtonClicked()
         MBOX_CRIT( "Invalid number" );
         ui->use_time_line_edit->clear();
         ui->use_time_line_edit->setFocus();
+        ui->tabWidget->setEnabled( true );
         return;
     }
     if( ui->expires_on_checkbox->isChecked() ){
         if( ui->expires_on_dt_edit->date() < QDate::currentDate() ){
             MBOX_CRIT( "Please specify a correct expiry date" );
+            ui->tabWidget->setEnabled( true );
             return;
         }
     }
     if( ui->instructor_name_line_edit->text().trimmed().isEmpty() ){
         MBOX_CRIT( "You haven't specified an instructor's name" );
         ui->instructor_name_line_edit->setFocus();
+        ui->tabWidget->setEnabled( true );
         return;
     }
 
@@ -460,6 +499,7 @@ void AddQuestionWindow::OnSubmitButtonClicked()
             ui->tabWidget->setCurrentIndex( 0 );
             QMessageBox::critical( this, windowTitle(), "We have a question with unmarked solution");
             ui->questions_tree_view->setCurrentIndex( model->index( i, 0 ) );
+            ui->tabWidget->setEnabled( true );
             return;
         }
     }
@@ -486,6 +526,7 @@ void AddQuestionWindow::OnSubmitButtonClicked()
     FillDataToUpload();
     if( upload_metadata.size() == 0 ){ // no files to upload?
         CompleteSubmission();
+        ui->tabWidget->setEnabled( true );
     } else {
         ui->tabWidget->setCurrentIndex( 0 );
         PerformUpload();
@@ -501,6 +542,9 @@ void AddQuestionWindow::FillDataToUpload()
         if( item.contains( "photo" ) || item.contains( "raw" ) ){
             upload_metadata.push_back( GetUploadMetaData( i, item ) );
         }
+    }
+    if( ui->using_icon_check->isChecked() && ui->using_icon_check->isEnabled() ){
+        upload_metadata.push_back( GetUploadMetaData( -1, QJsonObject{ { "photo", icon_filename } } ) );
     }
     failed_uploads.clear();
 }
@@ -521,14 +565,14 @@ void AddQuestionWindow::PerformUpload()
     });
     QObject::connect( upload_task, &UploadTask::completed, [=, this]{
         if( this->failed_uploads.isEmpty() ){
-            this->CompleteSubmission();
             upload_status_dialog->accept();
+            this->CompleteSubmission();
         } else {
             auto response = QMessageBox::critical( this, "Error",
                                    "Some files could not be uploaded to the server. Retry?",
                                    QMessageBox::Yes | QMessageBox::No );
             if( response == QMessageBox::No ){
-                upload_status_dialog->accept();
+                ui->tabWidget->setEnabled( true );
                 return;
             }
             this->FillDataToUpload();
@@ -538,6 +582,12 @@ void AddQuestionWindow::PerformUpload()
     QObject::connect( upload_task, &UploadTask::status, upload_status_dialog,
                       &UploadStatusDialog::setMessage );
     QObject::connect( upload_task, &UploadTask::successful, [=,this]( int index, QString url ) mutable {
+        if( index == -1 ){ // this is the icon for the image, not regular images for questions
+            ui->icon_preview_text->setText( "New logo uploaded" );
+            this->icon_filename = "URL: " + url;
+            ui->using_icon_check->setEnabled( false );
+            return;
+        }
         QJsonValueRef data_ref = this->question_items[index];
         QJsonObject result = data_ref.toObject();
         result["url"] = url;
@@ -592,6 +642,12 @@ QJsonObject AddQuestionWindow::GetQuestionJson()
     question["departments"] = QJsonArray::fromStringList(
                 ui->departments_text_edit->toPlainText().split( "\n" ) );
     question["repository_name"] = ui->repository_combo->currentText().trimmed();
+    if( ui->using_icon_check->isChecked() && icon_filename.startsWith( "URL:" ) ){
+        question["icon"] = icon_filename;
+    } else {
+        question["icon"] = "default";
+    }
+
     if( ui->expires_on_checkbox->isChecked() ){
         question["expires_on"] = GetDate( ui->expires_on_dt_edit->date() );
     }
@@ -698,7 +754,7 @@ void UploadTask::loop()
         request.setHeader( QNetworkRequest::ContentTypeHeader,
                            "multipart/form-data; boundary=" + boundary );
         request.setHeader( QNetworkRequest::ContentLengthHeader, data.length() );
-        request.setRawHeader( "FileIndex", tr("%1").arg( front_item.data_index ).toUtf8() );
+        request.setRawHeader( "FileIndex", QByteArray::number( front_item.data_index ) );
         emit status( tr( "Uploading %1" ).arg( front_item.filename ) );
 
         QNetworkReply *reply = network_manager->post( request, data );
@@ -713,6 +769,7 @@ void UploadTask::OnNetworkReplied()
     Q_ASSERT( network_reply != nullptr );
 
     int index = network_reply->request().rawHeader( "FileIndex" ).toInt();
+
     index_list.removeAll( index );
 
     if( network_reply->error() != QNetworkReply::NoError ){
