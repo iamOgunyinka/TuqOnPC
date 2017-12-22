@@ -30,7 +30,7 @@ ListCoursesDialog::~ListCoursesDialog()
     delete ui;
 }
 
-void ListCoursesDialog::SetNetworkManager(QNetworkAccessManager * network )
+void ListCoursesDialog::SetNetworkManager( QNetworkAccessManager * network )
 {
     network_manager = network;
 }
@@ -107,68 +107,70 @@ void ListCoursesDialog::Start()
 void ListCoursesDialog::OnListRepositoryCustomMenuTriggered( QPoint const &point )
 {
     QModelIndex model_index = ui->repo_treeview->indexAt( point );
-    if( !model_index.isValid() ) return;
     QMenu menu{ this };
-    menu.setTitle( "Action");
+    menu.setTitle( "Action" );
 
-    if( !model_index.parent().isValid() ){ // this is a repository
-        QAction * const delete_repository_action = new QAction( "Delete repository" );
-        QAction *const add_repository = new QAction( "Add repository" );
-        QObject::connect( delete_repository_action, &QAction::triggered, [=]{
-            auto response = QMessageBox::information( this, "Delete repository",
-                                   "Deleting this repository means you lose every course "
-                                   "existing under it, are you sure you want to continue?",
-                                   QMessageBox::Yes | QMessageBox::No );
-            if( response == QMessageBox::Yes ){
-                QModelIndex const model = ui->repo_treeview->model()->index( model_index.row(), 0 );
-                QString const repository_name = ui->repo_treeview->model()->data( model ).toString();
-                this->DeleteRepository( repository_name );
-                ui->repo_treeview->model()->removeRow( model_index.row() );
-            }
-        });
-        QObject::connect( add_repository, &QAction::triggered, this,
-                          &ListCoursesDialog::OnAddRepositoryTriggered );
-        menu.addAction( add_repository );
-        menu.addAction( delete_repository_action );
-    } else {
-        QAction *delete_course_action = new QAction( "Delete course" );
-        QAction *edit_course_action = new QAction( "Edit course" );
-        QAction *list_partaker_action = new QAction( "List partakers" );
+    // regardless of the point on the tree_view, "Add repository" is available
+    QAction * const add_repository = new QAction( "Add repository" );
+    QObject::connect( add_repository, &QAction::triggered, this, &ListCoursesDialog::OnAddRepositoryTriggered );
+    menu.addAction( add_repository );
 
-        auto course_prelim_action = [=]()-> QPair<long, QString> {
-            QModelIndex parent_model = ui->repo_treeview->model()->index( model_index.parent().row(), 0 );
-            QString const repository_name = ui->repo_treeview->model()->data( parent_model ).toString();
-            long const course_id = repository_courses.value( repository_name ).at( model_index.row() ).second;
-            return { course_id, repository_name };
-        };
-        QObject::connect( list_partaker_action, &QAction::triggered, [=]{
-            auto const course_information = course_prelim_action();
-            this->ListCoursePartakers( course_information.first, course_information.second );
-        });
+    if( model_index.isValid() ){
+        if( !model_index.parent().isValid() ){ // this is a repository
+            QAction * const delete_repository_action = new QAction( "Delete repository" );
+            QObject::connect( delete_repository_action, &QAction::triggered, [=]{
+                auto response = QMessageBox::information( this, "Delete repository",
+                                       "Deleting this repository means you lose every course "
+                                       "existing under it, are you sure you want to continue?",
+                                       QMessageBox::Yes | QMessageBox::No );
+                if( response == QMessageBox::Yes ){
+                    QModelIndex const model = ui->repo_treeview->model()->index( model_index.row(), 0 );
+                    QString const repository_name = ui->repo_treeview->model()->data( model ).toString();
+                    this->DeleteRepository( repository_name );
+                    ui->repo_treeview->model()->removeRow( model_index.row() );
+                }
+            });
+            menu.addAction( delete_repository_action );
+        } else {
+            QAction *delete_course_action = new QAction( "Delete course" );
+            QAction *edit_course_action = new QAction( "Edit course" );
+            QAction *list_partaker_action = new QAction( "List partakers" );
 
-        QObject::connect( delete_course_action, &QAction::triggered, [=]{
-            auto response = QMessageBox::information( this, "Delete course",
-                                                      "Are you sure you want to delete course?",
-                                                      QMessageBox::Yes | QMessageBox::No );
-            if( response == QMessageBox::Yes ){
-                auto const course_repo_pair = course_prelim_action();
-                this->DeleteCourse( course_repo_pair.first, course_repo_pair.second );
-                ui->repo_treeview->model()->removeRow( model_index.row(), model_index.parent() );
-            }
-        });
+            auto course_prelim_action = [=]()-> QPair<long, QString> {
+                QModelIndex parent_model = ui->repo_treeview->model()->index( model_index.parent().row(), 0 );
+                QString const repository_name = ui->repo_treeview->model()->data( parent_model ).toString();
+                long const course_id = repository_courses.value( repository_name ).at( model_index.row() ).second;
+                return { course_id, repository_name };
+            };
+            QObject::connect( list_partaker_action, &QAction::triggered, [=]{
+                auto const course_information = course_prelim_action();
+                this->ListCoursePartakers( course_information.first, course_information.second );
+            });
 
-        QObject::connect( edit_course_action, &QAction::triggered, [=]{
-            auto response = QMessageBox::information( this, "Edit",
-                                                      "Are you sure you want to edit this course?",
-                                                      QMessageBox::Yes | QMessageBox::No );
-            if( response == QMessageBox::Yes ){
-                auto const course_repo_pair = course_prelim_action();
-                this->EditCourse( course_repo_pair.first, course_repo_pair.second );
-            }
-        });
-        menu.addAction( list_partaker_action );
-        menu.addAction( edit_course_action );
-        menu.addAction( delete_course_action );
+            QObject::connect( delete_course_action, &QAction::triggered, [=]{
+                auto response = QMessageBox::information( this, "Delete course",
+                                                          "Are you sure you want to delete course?",
+                                                          QMessageBox::Yes | QMessageBox::No );
+                if( response == QMessageBox::Yes ){
+                    auto const course_repo_pair = course_prelim_action();
+                    this->DeleteCourse( course_repo_pair.first, course_repo_pair.second );
+                    ui->repo_treeview->model()->removeRow( model_index.row(), model_index.parent() );
+                }
+            });
+
+            QObject::connect( edit_course_action, &QAction::triggered, [=]{
+                auto response = QMessageBox::information( this, "Edit",
+                                                          "Are you sure you want to edit this course?",
+                                                          QMessageBox::Yes | QMessageBox::No );
+                if( response == QMessageBox::Yes ){
+                    auto const course_repo_pair = course_prelim_action();
+                    this->EditCourse( course_repo_pair.first, course_repo_pair.second );
+                }
+            });
+            menu.addAction( list_partaker_action );
+            menu.addAction( edit_course_action );
+            menu.addAction( delete_course_action );
+        }
     }
     menu.exec( ui->repo_treeview->mapToGlobal( point ) );
 }
